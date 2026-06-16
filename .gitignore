@@ -15,6 +15,7 @@ build/
 work/data/
 work/finetune_data/
 work/models/
+.DS_Store
 *.pt
 *.pth
 
