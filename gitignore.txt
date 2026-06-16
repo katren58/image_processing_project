@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data & model weights (too large for GitHub)
+work/data/
+work/finetune_data/
+work/models/
+*.pt
+*.pth
+
+# Auto-generated config with absolute paths — machine-specific
+work/data.yaml
+
+# ADE20K raw download
+ADEChallengeData2016.zip
+ADEChallengeData2016/
+
+# Ultralytics default output (in case `project=` ever falls back to relative path)
+runs/
+
+# Results images & JSON (commit selectively)
+# Uncomment below to ignore results too:
+# work/results/
+
+# OS
+.DS_Store
+Thumbs.db
