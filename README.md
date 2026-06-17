@@ -19,6 +19,17 @@ Course project. We took three different vision tasks (a low-level feature detect
 | Fine-tuning         | YOLOv8n retrained on noisy images using clean predictions as pseudo-labels (class-agnostic, `nc=1`)                                              |
 
 
+## Dataset overview
+
+Sample images and their ground-truth segmentation masks:
+
+![EDA samples](results/eda_samples.png)
+
+Class distribution across the top 20 ADE20K classes by pixel count — `wall` dominates by a wide margin:
+
+![Class distribution](results/class_distribution.png)
+
+
 ## How we measure things
 
 | Task                 | Metric                                                                                                                                     |
@@ -86,8 +97,24 @@ All distortion and enhancement evaluations run on the first 50 images (`EVAL_N =
 | SegFormer | Per-image mIoU (mean over 200)                 | 0.335                                                |
 | SegFormer | Dataset-level mIoU (140 / 150 classes present) | 0.261                                                |
 
+Baseline outputs from each task on a sample clean image:
 
-### Performance under mid-severity distortion (level 3)
+![ORB keypoints — clean](results/orb_clean.png)
+![YOLO detections — clean](results/yolo_clean.png)
+![SegFormer prediction — clean](results/segformer_clean.png)
+
+
+### Distortion sweep
+
+One image distorted at all 5 severity levels, for each of the 3 distortions:
+
+![Distortions preview](results/distortions_preview.png)
+
+All three metrics plotted against SNR (dB), one line per distortion:
+
+![Distortion SNR curves](results/distortion_snr_curves.png)
+
+#### Mid-severity distortion (level 3)
 
 | Distortion             | SNR (dB) | ORB ratio | YOLO recall | Seg mIoU |
 | ---------------------- | -------- | --------- | ----------- | -------- |
@@ -95,10 +122,16 @@ All distortion and enhancement evaluations run on the first 50 images (`EVAL_N =
 | JPEGCompression (q=25) | 24.8     | 1.001     | 0.583       | 0.333    |
 | LowLight (-0.5)        | 2.6      | 0.908     | 0.438       | 0.277    |
 
+The full SNR ladder (all 5 levels per distortion) is in `results/distortion_results.json`.
 
-The full SNR ladder (all 5 levels per distortion) is in `work/results/distortion_results.json`.
 
-### What enhancement does at heavy distortion (level 4)
+### Enhancement
+
+Clean / distorted / enhanced side-by-side, one row per distortion:
+
+![Enhancement preview](results/enhancement_preview.png)
+
+#### What enhancement does at heavy distortion (level 4)
 
 | Distortion           | Enhancer         | YOLO recall | Seg mIoU |
 | -------------------- | ---------------- | ----------- | -------- |
@@ -106,8 +139,12 @@ The full SNR ladder (all 5 levels per distortion) is in `work/results/distortion
 | JPEGCompression (L4) | Bilateral filter | 0.575       | 0.300    |
 | LowLight (L4)        | CLAHE            | 0.176       | 0.196    |
 
-
 For reference, at level 4 with no enhancement: YOLO recall is 0.391 / 0.300 / 0.203 and Seg mIoU is 0.271 / 0.283 / 0.214 (Gauss / JPEG / Low). So bilateral helped JPEG quite a lot, NLM was a wash on noise, and CLAHE actively hurt low light.
+
+Per-class SegFormer IoU for the top-20 classes — clean / distorted-L3 / enhanced-L4, one panel per distortion:
+
+![Per-class IoU](results/per_class_iou.png)
+
 
 ### Fine-tuning YOLOv8 on noisy images
 
@@ -120,8 +157,16 @@ Fine-tuned for 5 epochs on 120 GaussNoise-L3 images with the clean YOLO predicti
 | Enhanced (NLM)                       | 0.541                        |
 | **Fine-tuned (5 epochs, conf=0.01)** | **0.544**                    |
 
+![Four-way comparison](results/four_way_comparison.png)
 
 The fine-tune ended up with basically the same recall as just running standard YOLO on the noisy image. Training for more epochs would almost certainly help (see the methodology notes).
+
+### Qualitative pipeline view
+
+YOLO and SegFormer outputs side-by-side across the three conditions (clean / distorted / enhanced):
+
+![Pipeline visual](results/pipeline_visual.png)
+
 
 ## Methodology notes & limitations
 
@@ -155,17 +200,3 @@ A few non-obvious choices worth flagging up front so the numbers above don't get
 - **CLAHE on low light made every metric worse.** YOLO recall went from 0.203 distorted to 0.176 enhanced; SegFormer mIoU from 0.214 to 0.196. Over-aggressive contrast pushed images outside what the networks have seen during training.
 - **Bilateral filtering on JPEG was the only clear enhancement win.** YOLO recall at L4 nearly doubled (0.300 → 0.575) and SegFormer mIoU edged up too (0.283 → 0.300).
 - **Fine-tuning at this budget didn't move the needle** — same recall as the un-fine-tuned model at the same evaluation threshold. With 4× the epochs we'd expect a real gain (see the methodology note).
-
-
-## Visualizations
-
-| File                        | What it shows                                                                                             |
-| --------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `eda_samples.png`           | Six sample images alongside their GT segmentation masks and overlays                                      |
-| `class_distribution.png`    | Top 20 ADE20K classes by pixel count — wall dominates by a wide margin                                    |
-| `distortions_preview.png`   | One image distorted at all 5 severity levels, for each of the 3 distortions                               |
-| `distortion_snr_curves.png` | All 3 metrics plotted against SNR, one line per distortion                                                |
-| `enhancement_preview.png`   | Clean / distorted / enhanced side-by-side, one row per distortion                                         |
-| `per_class_iou.png`         | Per-class SegFormer IoU for the top-20 classes — clean / distorted-L3 / enhanced-L4, panel per distortion |
-| `four_way_comparison.png`   | Bar chart: clean / distorted / enhanced / fine-tuned (class-agnostic recall)                              |
-| `pipeline_visual.png`       | YOLO and SegFormer outputs side-by-side across the three conditions                                       |
